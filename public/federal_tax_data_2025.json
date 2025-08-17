@@ -1,0 +1,114 @@
+{
+  "tax_year": 2025,
+  "description": "Federal income tax brackets, standard deductions, and filing status information for tax year 2025 (returns filed in 2026)",
+  "source": "Internal Revenue Service (IRS) official publications and inflation adjustments",
+  "last_updated": "2025-08-16",
+  
+  "filing_statuses": {
+    "single": {
+      "code": "S",
+      "description": "Single taxpayer"
+    },
+    "married_filing_jointly": {
+      "code": "MFJ",
+      "description": "Married filing jointly or qualifying surviving spouse"
+    },
+    "married_filing_separately": {
+      "code": "MFS", 
+      "description": "Married filing separately"
+    },
+    "head_of_household": {
+      "code": "HOH",
+      "description": "Head of household"
+    }
+  },
+  
+  "standard_deductions": {
+    "single": 15000,
+    "married_filing_jointly": 30000,
+    "married_filing_separately": 15000,
+    "head_of_household": 22500
+  },
+  
+  "tax_brackets": {
+    "single": [
+      {"rate": 0.10, "min": 0, "max": 11925},
+      {"rate": 0.12, "min": 11925, "max": 48475},
+      {"rate": 0.22, "min": 48475, "max": 103350},
+      {"rate": 0.24, "min": 103350, "max": 197300},
+      {"rate": 0.32, "min": 197300, "max": 250525},
+      {"rate": 0.35, "min": 250525, "max": 626350},
+      {"rate": 0.37, "min": 626350, "max": null}
+    ],
+    "married_filing_jointly": [
+      {"rate": 0.10, "min": 0, "max": 23850},
+      {"rate": 0.12, "min": 23850, "max": 96950},
+      {"rate": 0.22, "min": 96950, "max": 206700},
+      {"rate": 0.24, "min": 206700, "max": 394600},
+      {"rate": 0.32, "min": 394600, "max": 501050},
+      {"rate": 0.35, "min": 501050, "max": 751600},
+      {"rate": 0.37, "min": 751600, "max": null}
+    ],
+    "married_filing_separately": [
+      {"rate": 0.10, "min": 0, "max": 11925},
+      {"rate": 0.12, "min": 11925, "max": 48475},
+      {"rate": 0.22, "min": 48475, "max": 103350},
+      {"rate": 0.24, "min": 103350, "max": 197300},
+      {"rate": 0.32, "min": 197300, "max": 250525},
+      {"rate": 0.35, "min": 250525, "max": 365600},
+      {"rate": 0.37, "min": 365600, "max": null}
+    ],
+    "head_of_household": [
+      {"rate": 0.10, "min": 0, "max": 17000},
+      {"rate": 0.12, "min": 17000, "max": 64850},
+      {"rate": 0.22, "min": 64850, "max": 103350},
+      {"rate": 0.24, "min": 103350, "max": 197300},
+      {"rate": 0.32, "min": 197300, "max": 250500},
+      {"rate": 0.35, "min": 250500, "max": 626350},
+      {"rate": 0.37, "min": 626350, "max": null}
+    ]
+  },
+  
+  "tax_calculation_rules": {
+    "system_type": "progressive",
+    "description": "Federal income tax uses a progressive system where higher rates apply only to income within higher brackets",
+    "steps": [
+      "1. Calculate Adjusted Gross Income (AGI) from all income sources",
+      "2. Subtract standard deduction (or itemized deductions if greater) to get taxable income",
+      "3. Apply progressive tax brackets to taxable income based on filing status",
+      "4. Calculate tax owed by applying each bracket rate to the appropriate income layer",
+      "5. Subtract tax credits and payments to determine final tax owed or refund"
+    ],
+    "key_notes": [
+      "Personal exemptions are $0 for tax year 2025 (eliminated by Tax Cuts and Jobs Act)",
+      "Tax rates apply only to income within each bracket, not entire income",
+      "Itemized deductions have no limitation for 2025",
+      "Standard deduction amounts are adjusted annually for inflation"
+    ]
+  },
+  
+  "additional_info": {
+    "personal_exemption": 0,
+    "inflation_adjustment_method": "Chained Consumer Price Index (C-CPI)",
+    "approximate_inflation_adjustment": "2.8% increase from 2024",
+    "filing_deadline": "April 15, 2026 (for 2025 tax year)",
+    "bonus_deduction_seniors": {
+      "description": "Additional deduction for taxpayers 65 and older (2025-2028)",
+      "amounts": {
+        "single": 6000,
+        "married_filing_jointly": 12000
+      },
+      "phase_out": {
+        "starts_at": {
+          "single": 75000,
+          "married_filing_jointly": 150000
+        },
+        "fully_eliminated_at": {
+          "single": 175000,
+          "married_filing_jointly": 250000
+        },
+        "phase_out_rate": 0.06
+      }
+    }
+  }
+}

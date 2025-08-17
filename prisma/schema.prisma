@@ -1,0 +1,259 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/tax_filing_app/app/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  taxReturns    TaxReturn[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model TaxReturn {
+  id               String   @id @default(cuid())
+  userId           String
+  taxYear          Int
+  filingStatus     String   // Single, MarriedFilingJointly, MarriedFilingSeparately, HeadOfHousehold
+  currentStep      Int      @default(1)
+  isComplete       Boolean  @default(false)
+  submittedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalInfo     PersonalInfo?
+  w2Forms          W2Form[]
+  form1099s        Form1099[]
+  deductions       Deductions?
+  taxCalculation   TaxCalculation?
+  
+  @@unique([userId, taxYear])
+}
+
+model PersonalInfo {
+  id               String   @id @default(cuid())
+  taxReturnId      String   @unique
+  firstName        String
+  middleInitial    String?
+  lastName         String
+  ssn              String
+  dateOfBirth      DateTime
+  occupation       String?
+  
+  // Address information
+  streetAddress    String
+  aptNumber        String?
+  city             String
+  state            String
+  zipCode          String
+  
+  // Spouse information (if married filing jointly)
+  spouseFirstName  String?
+  spouseMiddleInitial String?
+  spouseLastName   String?
+  spouseSSN        String?
+  spouseDateOfBirth DateTime?
+  spouseOccupation String?
+  
+  // Dependents
+  numDependents    Int      @default(0)
+  dependentsData   Json?    // Store dependent information as JSON
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  taxReturn        TaxReturn @relation(fields: [taxReturnId], references: [id], onDelete: Cascade)
+}
+
+model W2Form {
+  id               String   @id @default(cuid())
+  taxReturnId      String
+  
+  // Employer Information
+  employerName     String
+  employerEIN      String
+  employerAddress  String
+  
+  // Box information from W-2
+  box1_wages       Decimal  @db.Decimal(12, 2)  // Wages, tips, other compensation
+  box2_federal     Decimal  @db.Decimal(12, 2)  // Federal income tax withheld
+  box3_social      Decimal  @db.Decimal(12, 2)  // Social security wages
+  box4_socialTax   Decimal  @db.Decimal(12, 2)  // Social security tax withheld
+  box5_medicare    Decimal  @db.Decimal(12, 2)  // Medicare wages and tips
+  box6_medicareTax Decimal  @db.Decimal(12, 2)  // Medicare tax withheld
+  box7_tips        Decimal? @db.Decimal(12, 2)  // Social security tips
+  box8_allocTips   Decimal? @db.Decimal(12, 2)  // Allocated tips
+  box10_dependent  Decimal? @db.Decimal(12, 2)  // Dependent care benefits
+  box11_nonqual    Decimal? @db.Decimal(12, 2)  // Nonqualified plans
+  box12_codes      Json?    // Box 12 codes and amounts
+  box13_statutory  Boolean  @default(false)     // Statutory employee
+  box13_retirement Boolean  @default(false)     // Retirement plan
+  box13_thirdparty Boolean  @default(false)     // Third-party sick pay
+  box14_other      Json?    // Other deductions
+  
+  // State tax information
+  box15_state      String?  // State
+  box16_stateWages Decimal? @db.Decimal(12, 2)  // State wages, tips, etc.
+  box17_stateTax   Decimal? @db.Decimal(12, 2)  // State income tax
+  box18_localWages Decimal? @db.Decimal(12, 2)  // Local wages, tips, etc.
+  box19_localTax   Decimal? @db.Decimal(12, 2)  // Local income tax
+  box20_locality   String?  // Locality name
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  taxReturn        TaxReturn @relation(fields: [taxReturnId], references: [id], onDelete: Cascade)
+}
+
+model Form1099 {
+  id               String   @id @default(cuid())
+  taxReturnId      String
+  
+  // Form type (NEC, MISC, INT, DIV, B, R, G, K, etc.)
+  formType         String   // Enum: NEC, MISC, INT, DIV, B, R, G, K
+  
+  // Payer Information
+  payerName        String
+  payerTIN         String
+  payerAddress     String
+  recipientTIN     String   // Recipient's TIN/SSN
+  accountNumber    String?
+  
+  // Form-specific data stored as JSON
+  // This allows flexibility for different form types with different box structures
+  boxData          Json
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  taxReturn        TaxReturn @relation(fields: [taxReturnId], references: [id], onDelete: Cascade)
+  
+  @@index([taxReturnId, formType])
+}
+
+model Deductions {
+  id               String   @id @default(cuid())
+  taxReturnId      String   @unique
+  
+  // Standard vs Itemized choice
+  useStandardDeduction Boolean @default(true)
+  standardDeductionAmount Decimal @db.Decimal(12, 2) @default(0)
+  
+  // Itemized deductions
+  medicalExpenses  Decimal? @db.Decimal(12, 2)
+  stateLocalTaxes  Decimal? @db.Decimal(12, 2)
+  mortgageInterest Decimal? @db.Decimal(12, 2)
+  charitableGifts  Decimal? @db.Decimal(12, 2)
+  otherDeductions  Decimal? @db.Decimal(12, 2)
+  totalItemized    Decimal? @db.Decimal(12, 2)
+  
+  // Above-the-line deductions
+  iraContributions Decimal? @db.Decimal(12, 2)
+  studentLoanInterest Decimal? @db.Decimal(12, 2)
+  hsa_contributions   Decimal? @db.Decimal(12, 2)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  taxReturn        TaxReturn @relation(fields: [taxReturnId], references: [id], onDelete: Cascade)
+}
+
+model TaxCalculation {
+  id               String   @id @default(cuid())
+  taxReturnId      String   @unique
+  
+  // Income calculations
+  totalWages       Decimal  @db.Decimal(12, 2)
+  total1099Income  Decimal  @db.Decimal(12, 2) @default(0)
+  interestIncome   Decimal  @db.Decimal(12, 2) @default(0)
+  dividendIncome   Decimal  @db.Decimal(12, 2) @default(0)
+  capitalGains     Decimal  @db.Decimal(12, 2) @default(0)
+  retirementIncome Decimal  @db.Decimal(12, 2) @default(0)
+  unemploymentIncome Decimal @db.Decimal(12, 2) @default(0)
+  otherIncome      Decimal  @db.Decimal(12, 2) @default(0)
+  adjustedGrossIncome Decimal @db.Decimal(12, 2)
+  deductionAmount  Decimal  @db.Decimal(12, 2)
+  taxableIncome    Decimal  @db.Decimal(12, 2)
+  
+  // Tax calculations
+  taxBeforeCredits Decimal  @db.Decimal(12, 2)
+  childTaxCredit   Decimal? @db.Decimal(12, 2)
+  earnedIncomeCredit Decimal? @db.Decimal(12, 2)
+  otherCredits     Decimal? @db.Decimal(12, 2)
+  totalCredits     Decimal  @db.Decimal(12, 2) @default(0)
+  taxAfterCredits  Decimal  @db.Decimal(12, 2)
+  
+  // Withholding and payments
+  federalWithheld  Decimal  @db.Decimal(12, 2)
+  totalWithheld    Decimal  @db.Decimal(12, 2) @default(0)
+  estimatedPayments Decimal? @db.Decimal(12, 2)
+  totalPayments    Decimal  @db.Decimal(12, 2)
+  
+  // Final calculation
+  refundAmount     Decimal? @db.Decimal(12, 2)
+  oweAmount        Decimal? @db.Decimal(12, 2)
+  
+  // Form 1040 line mappings (JSON for flexibility)
+  form1040Lines    Json?
+  
+  // Calculation details (JSON for flexibility)
+  calculationDetails Json?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  taxReturn        TaxReturn @relation(fields: [taxReturnId], references: [id], onDelete: Cascade)
+}
